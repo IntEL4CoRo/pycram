@@ -2,6 +2,7 @@
 import datetime
 import getpass
 import os
+import pwd
 from typing import Optional
 
 import git
