@@ -31,6 +31,10 @@ WORKDIR ${PYCRAM_WS}/src/pycram
 RUN git config --global --add safe.directory ${PWD}
 COPY --chown=${NB_USER}:users binder/webapps.json ${PYCRAM_WS}/src/rvizweb/webapps/app.json
 
+# Install Language Server Protocol
+RUN pip install 'jupyterlab>=3.6.0,<4.0.0' jupyterlab-lsp
+RUN pip install 'python-lsp-server[all]'
+
 # Override container entrypoint
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
