@@ -38,3 +38,10 @@ RUN pip install 'python-lsp-server[all]'
 # Override container entrypoint
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
+
+USER root
+RUN export VERSION=4.101.2 && \
+    curl -fOL https://github.com/coder/code-server/releases/download/v$VERSION/code-server_${VERSION}_amd64.deb && \
+    dpkg -i code-server_${VERSION}_amd64.deb && \
+    rm code-server_${VERSION}_amd64.deb
+USER ${NB_USER}
