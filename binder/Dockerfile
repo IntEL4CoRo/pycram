@@ -18,7 +18,7 @@ RUN pip install --requirement src/neem_interface_python/requirements.txt \
 # Install ROS dependencies
 WORKDIR  ${PYCRAM_WS}
 USER root
-RUN rosdep update && apt update && apt dist-upgrade -y \
+RUN rosdep update --include-eol-distros && apt update && apt dist-upgrade -y \
   && rosdep install -y --ignore-src --from-paths ./ -r \
   && rosdep fix-permissions
 
