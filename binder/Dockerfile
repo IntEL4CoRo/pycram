@@ -16,7 +16,7 @@ WORKDIR ${PYCRAM_WS}/src/
 # COPY --chown=${NB_USER}:users . ${PYCRAM_WS}/src/pycram
 
 # Can not use the pycram-https.rosinstall under the root directory, because some submodules are linked with SSH urls
-RUN vcs import --input https://github.com/cram2/pycram/raw/refs/heads/dev/rosinstall/pycram-https.rosinstall
+RUN vcs import --recursive --input https://github.com/cram2/pycram/raw/refs/heads/dev/rosinstall/pycram-https.rosinstall
 # Install python dependencies
 WORKDIR ${PYCRAM_WS}/src/pycram
 RUN pip install --requirement src/neem_interface_python/requirements.txt \
