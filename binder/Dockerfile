@@ -42,4 +42,27 @@ COPY --chown=${NB_USER}:users binder/webapps.json ${PYCRAM_WS}/src/rvizweb/webap
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
+RUN code-server --install-extension ms-python.python \
+  && code-server --install-extension ms-toolsai.jupyter
+RUN echo "\
+c.ServerProxy.servers = {\
+    'code': {\
+        'command': ['code-server',\
+                    '--auth=none', \
+                    '--disable-workspace-trust',\
+                    '--ignore-last-opened',\
+                    '$PWD',\
+                    ],\
+        'timeout': 20,\
+        'port': 8080,\
+        'absolute_url': False,\
+        'launcher_entry': {\
+            'title': 'Visual Studio Code',\
+            'icon_path': '$HOME/vscode.svg',\
+        },\
+        'new_browser_tab': True\
+    }\
+}\
+" >> ~/.jupyter/jupyter_notebook_config.py
+COPY --chown=${NB_USER}:users vscode.svg $HOME/
 COPY --chown=${NB_USER}:users binder/vscode.svg $HOME/
