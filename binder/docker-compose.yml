@@ -9,21 +9,20 @@ services:
     tty: true
     ports: 
       - 8888:8888
-    privileged: true
-    user: root
+    # user: root
     command: jupyter lab --allow-root --NotebookApp.token='' --no-browser --ip=0.0.0.0
-    entrypoint: ["/home/jovyan/workspace/ros/src/pycram/binder/entrypoint.sh"]
+    # entrypoint: ["/home/jovyan/workspace/ros/src/pycram/binder/entrypoint.sh"]
     volumes:
       - ../:/home/jovyan/workspace/src/pycram:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     environment:
       - DISPLAY
       - QT_X11_NO_MITSHM=1
-    #   - NVIDIA_DRIVER_CAPABILITIES=all
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

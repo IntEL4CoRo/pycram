@@ -1,5 +1,13 @@
 FROM intel4coro/base-notebook:20.04-noetic-vnc
 
+# Install VSCode server
+USER root
+RUN export VERSION=4.101.2 && \
+    curl -fOL https://github.com/coder/code-server/releases/download/v$VERSION/code-server_${VERSION}_amd64.deb && \
+    dpkg -i code-server_${VERSION}_amd64.deb && \
+    rm code-server_${VERSION}_amd64.deb
+USER ${NB_USER}
+
 # Initiate workspace 
 ENV PYCRAM_WS=/home/${NB_USER}/workspace/ros
 WORKDIR ${PYCRAM_WS}/src/
@@ -39,9 +47,4 @@ RUN pip install 'python-lsp-server[all]'
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
-USER root
-RUN export VERSION=4.101.2 && \
-    curl -fOL https://github.com/coder/code-server/releases/download/v$VERSION/code-server_${VERSION}_amd64.deb && \
-    dpkg -i code-server_${VERSION}_amd64.deb && \
-    rm code-server_${VERSION}_amd64.deb
-USER ${NB_USER}
+COPY --chown=${NB_USER}:users binder/vscode.svg $HOME/
