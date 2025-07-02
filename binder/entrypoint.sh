@@ -21,7 +21,7 @@ c.ServerProxy.servers = {
                     ],
         'timeout': 20,
         'port': 8080,
-        'launch_url': '/code/?folder=/home',
+        'launch_url': '/code/?folder=$PWD',
         'launcher_entry': {
             'title': 'Visual Studio Code',
             'icon_path': '$HOME/vscode.svg',

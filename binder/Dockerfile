@@ -13,11 +13,10 @@ ENV PYCRAM_WS=/home/${NB_USER}/workspace/ros
 WORKDIR ${PYCRAM_WS}/src/
 
 # Copy everything to the ROS workspace
-COPY --chown=${NB_USER}:users . ${PYCRAM_WS}/src/pycram
+# COPY --chown=${NB_USER}:users . ${PYCRAM_WS}/src/pycram
 
 # Can not use the pycram-https.rosinstall under the root directory, because some submodules are linked with SSH urls
-RUN vcs import --input ${PYCRAM_WS}/src/pycram/binder/pycram-https.rosinstall --recursive
-
+RUN vcs import --input https://github.com/cram2/pycram/raw/refs/heads/dev/rosinstall/pycram-https.rosinstall
 # Install python dependencies
 WORKDIR ${PYCRAM_WS}/src/pycram
 RUN pip install --requirement src/neem_interface_python/requirements.txt \
@@ -38,10 +37,6 @@ RUN catkin build
 WORKDIR ${PYCRAM_WS}/src/pycram
 RUN git config --global --add safe.directory ${PWD}
 COPY --chown=${NB_USER}:users binder/webapps.json ${PYCRAM_WS}/src/rvizweb/webapps/app.json
-
-# Install Language Server Protocol
-RUN pip install 'jupyterlab>=3.6.0,<4.0.0' jupyterlab-lsp
-RUN pip install 'python-lsp-server[all]'
 
 # Override container entrypoint
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
