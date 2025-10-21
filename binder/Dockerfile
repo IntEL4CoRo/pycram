@@ -1,68 +1,50 @@
-FROM intel4coro/base-notebook:20.04-noetic-vnc
+FROM intel4coro/jupyter-ros2:jazzy-py3.12
 
-# Install VSCode server
-USER root
-RUN export VERSION=4.101.2 && \
-    curl -fOL https://github.com/coder/code-server/releases/download/v$VERSION/code-server_${VERSION}_amd64.deb && \
-    dpkg -i code-server_${VERSION}_amd64.deb && \
-    rm code-server_${VERSION}_amd64.deb
 USER ${NB_USER}
+# Setup up a ROS workspace
+ENV ROS_WS=${HOME}/workspace/ros
+RUN mkdir -p ${ROS_WS}/src
 
-# Initiate workspace 
-ENV PYCRAM_WS=/home/${NB_USER}/workspace/ros
-WORKDIR ${PYCRAM_WS}/src/
+# Clone pycram and its dependencies repos
+WORKDIR ${ROS_WS}/src
+RUN vcs import --input https://raw.githubusercontent.com/cram2/pycram/dev/rosinstall/pycram-ros2-https.rosinstall
 
-# Copy everything to the ROS workspace
-# COPY --chown=${NB_USER}:users . ${PYCRAM_WS}/src/pycram
+# # init submodule repo with ssh url in .gitmodules
+# RUN  cd ${ROS_WS}/src/pycram \
+#   && perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules \
+#   && git submodule sync \
+#   && git submodule update --init --recursive
 
-# Can not use the pycram-https.rosinstall under the root directory, because some submodules are linked with SSH urls
-RUN vcs import --input https://github.com/cram2/pycram/raw/refs/heads/dev/rosinstall/pycram-https.rosinstall
-# Install python dependencies
-WORKDIR ${PYCRAM_WS}/src/pycram
-# RUN pip install --requirement src/neem_interface_python/requirements.txt \
-RUN pip install --requirement requirements.txt
+# # Building ROS workspace
+WORKDIR ${ROS_WS}
+RUN source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install --parallel-workers 4
+RUN echo "source ${ROS_WS}/install/setup.bash" >> ${HOME}/.bashrc
 
-# Install ROS dependencies
-WORKDIR  ${PYCRAM_WS}
-USER root
-RUN rosdep update --include-eol-distros && apt update && apt dist-upgrade -y \
-  && rosdep install -y --ignore-src --from-paths ./ -r \
-  && rosdep fix-permissions
+# # Install Python dependencies
+WORKDIR ${ROS_WS}/src/pycram
+RUN pip install -r requirements.txt
 
-# Build catkin workspace
-USER ${NB_USER}
-RUN catkin build
+# Steps copy from github CI
+RUN pip install jupytext treon
+RUN cd ${ROS_WS}/src/pycram/examples && \
+    rm -rf ../notebooks && \
+    mkdir ../notebooks && \
+    jupytext --to notebook *.md && \
+    mv *.ipynb ../notebooks
 
-# JupyterLab UI configuration
-WORKDIR ${PYCRAM_WS}/src/pycram
-RUN git config --global --add safe.directory ${PWD}
-COPY --chown=${NB_USER}:users binder/webapps.json ${PYCRAM_WS}/src/rvizweb/webapps/app.json
+# Extra steps for binderhub
+RUN git config --global --add safe.directory ${ROS_WS}/src/pycram
+WORKDIR ${ROS_WS}/src/pycram/notebooks
 
-# Override container entrypoint
+RUN pip uninstall -y jupyterlab_examples_cell_toolbar
+
+COPY --chown=${NB_USER}:users binder/utils.py ${ROS_WS}/src/pycram/notebooks
+COPY --chown=${NB_USER}:users binder/pycram.rviz ${ROS_WS}/src/pycram/notebooks
+RUN ipython profile create && \
+    ln -s ${ROS_WS}/src/pycram/notebooks/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
+
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
+RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-
-RUN code-server --install-extension ms-python.python \
-  && code-server --install-extension ms-toolsai.jupyter
-RUN echo "\
-c.ServerProxy.servers = {\
-    'code': {\
-        'command': ['code-server',\
-                    '--auth=none', \
-                    '--disable-workspace-trust',\
-                    '--ignore-last-opened',\
-                    '$PWD',\
-                    ],\
-        'timeout': 20,\
-        'port': 8080,\
-        'absolute_url': False,\
-        'launcher_entry': {\
-            'title': 'Visual Studio Code',\
-            'icon_path': '$HOME/vscode.svg',\
-        },\
-        'new_browser_tab': True\
-    }\
-}\
-" >> ~/.jupyter/jupyter_notebook_config.py
-COPY --chown=${NB_USER}:users vscode.svg $HOME/
-COPY --chown=${NB_USER}:users binder/vscode.svg $HOME/
+USER ${NB_USER}
