@@ -28,21 +28,16 @@ RUN pip install -r requirements.txt
 # Steps copy from github CI
 RUN pip install jupytext treon
 RUN cd ${ROS_WS}/src/pycram/examples && \
-    rm -rf ../notebooks && \
-    mkdir ../notebooks && \
-    jupytext --to notebook *.md && \
-    mv *.ipynb ../notebooks
+    jupytext --to notebook *.md
 
 # Extra steps for binderhub
 RUN git config --global --add safe.directory ${ROS_WS}/src/pycram
-WORKDIR ${ROS_WS}/src/pycram/notebooks
+WORKDIR ${ROS_WS}/src/pycram/
 
-RUN pip uninstall -y jupyterlab_examples_cell_toolbar
-
-COPY --chown=${NB_USER}:users binder/utils.py ${ROS_WS}/src/pycram/notebooks
-COPY --chown=${NB_USER}:users binder/pycram.rviz ${ROS_WS}/src/pycram/notebooks
+COPY --chown=${NB_USER}:users binder/utils.py ${ROS_WS}/src/pycram/examples
+COPY --chown=${NB_USER}:users binder/pycram.rviz ${ROS_WS}/src/pycram/examples
 RUN ipython profile create && \
-    ln -s ${ROS_WS}/src/pycram/notebooks/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
+    ln -s ${ROS_WS}/src/pycram/examples/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
 
 COPY --chown=${NB_USER}:users binder/entrypoint.sh /
 RUN chmod +x /entrypoint.sh
